@@ -1,0 +1,1221 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Time Recorder XP Final</title>
+  <style>
+    :root {
+      --xp-blue: #245edb;
+      --xp-blue-dark: #1746a2;
+      --xp-blue-light: #5b9dff;
+      --xp-green: #4f9f45;
+      --xp-cream: #ece9d8;
+      --xp-panel: #f7f4e8;
+      --xp-border-dark: #404040;
+      --xp-border-mid: #808080;
+      --xp-border-light: #ffffff;
+      --xp-shadow: #b8b4a3;
+      --xp-text: #111;
+      --xp-rest: #d5d1c0;
+      --xp-warning: #fff8d6;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { min-height: 100%; }
+    body {
+      margin: 0;
+      color: var(--xp-text);
+      font-family: Tahoma, Verdana, "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", sans-serif;
+      background:
+        radial-gradient(circle at 20% 15%, rgba(255,255,255,.35), transparent 26%),
+        linear-gradient(135deg, #4ba3ff 0%, #2b7bd6 45%, #65b94f 45%, #52a340 100%);
+      image-rendering: pixelated;
+    }
+
+    button, input, select { font: inherit; }
+    button { color: #111; }
+
+    .desktop {
+      min-height: 100vh;
+      padding: max(12px, env(safe-area-inset-top)) 10px max(14px, env(safe-area-inset-bottom));
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+
+    .phone-shell {
+      width: min(430px, 100%);
+      background: #d6d6d6;
+      padding: 10px;
+      border-radius: 24px;
+      border: 2px solid #444;
+      box-shadow: 8px 8px 0 rgba(0,0,0,.24);
+    }
+
+    .window {
+      width: 100%;
+      min-height: calc(100vh - 34px);
+      background: var(--xp-cream);
+      border: 2px solid var(--xp-border-dark);
+      overflow: hidden;
+      border-radius: 16px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .titlebar {
+      min-height: 34px;
+      padding: 4px 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: white;
+      font-weight: 700;
+      letter-spacing: .2px;
+      background: linear-gradient(180deg, var(--xp-blue-light), var(--xp-blue) 48%, var(--xp-blue-dark));
+      border-bottom: 2px solid #0b2e88;
+      user-select: none;
+    }
+
+    .title-left { display: flex; gap: 8px; align-items: center; min-width: 0; }
+    .app-icon {
+      width: 18px; height: 18px; flex: 0 0 auto;
+      background: linear-gradient(90deg, #f44336 0 50%, #1f79ff 50% 100%);
+      border: 1px solid #fff;
+      box-shadow: inset -2px -2px 0 rgba(0,0,0,.2);
+    }
+    .title-text { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+    .controls { display: flex; gap: 5px; }
+    .control-btn {
+      width: 20px; height: 20px;
+      display: grid; place-items: center;
+      font-size: 11px;
+      color: #111;
+      background: linear-gradient(180deg, #fff, #c8d8ff);
+      border-top: 2px solid #fff;
+      border-left: 2px solid #fff;
+      border-right: 2px solid #2453a6;
+      border-bottom: 2px solid #2453a6;
+      line-height: 1;
+    }
+
+    .menubar {
+      min-height: 28px;
+      padding: 5px 10px;
+      border-bottom: 1px solid var(--xp-shadow);
+      background: #f4f1df;
+      display: flex;
+      gap: 14px;
+      font-size: 12px;
+      color: #222;
+      user-select: none;
+    }
+
+    .content {
+      flex: 1;
+      padding: 12px;
+      background: var(--xp-panel);
+      position: relative;
+    }
+
+    .page { display: none; }
+    .page.active { display: block; }
+
+    .panel {
+      background: #fffdf3;
+      border-top: 2px solid #fff;
+      border-left: 2px solid #fff;
+      border-right: 2px solid #8a877a;
+      border-bottom: 2px solid #8a877a;
+      padding: 12px;
+      box-shadow: inset 1px 1px 0 rgba(255,255,255,.7);
+    }
+    .panel + .panel { margin-top: 10px; }
+
+    .date-large {
+      font-size: 20px;
+      font-weight: 700;
+      color: #1f3f9d;
+      margin-bottom: 4px;
+    }
+    .subtle { color: #555; font-size: 12px; line-height: 1.4; }
+    .clock {
+      font-size: 24px;
+      font-family: "Courier New", monospace;
+      color: #111;
+      padding-top: 2px;
+    }
+
+    .hero-strip {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: stretch;
+      margin-bottom: 10px;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin: 10px 0 12px;
+    }
+
+    .stat-card {
+      background: #fffef6;
+      border-top: 2px solid #fff;
+      border-left: 2px solid #fff;
+      border-right: 2px solid #8f8a7b;
+      border-bottom: 2px solid #8f8a7b;
+      padding: 9px;
+      min-height: 106px;
+    }
+    .stat-card h3 { margin: 0 0 6px; color: #173c95; font-size: 13px; }
+    .stat-number { font-size: 22px; font-weight: 700; line-height: 1.05; }
+    .progress-xp {
+      height: 14px;
+      background: #e2dfcf;
+      border-top: 2px solid #8b887d;
+      border-left: 2px solid #8b887d;
+      border-right: 2px solid #fff;
+      border-bottom: 2px solid #fff;
+      margin: 7px 0;
+      overflow: hidden;
+    }
+    .progress-xp div { height: 100%; background: repeating-linear-gradient(90deg, #2a66d8 0 8px, #5a94ff 8px 16px); }
+
+    .menu-grid { display: grid; gap: 10px; }
+
+    .xp-button, .menu-btn, .tab-btn, .hour-cell, .project-tile, .palette-btn {
+      font: inherit;
+      cursor: pointer;
+      background: linear-gradient(180deg, #fff, #ded9c8);
+      border-top: 2px solid var(--xp-border-light);
+      border-left: 2px solid var(--xp-border-light);
+      border-right: 2px solid var(--xp-border-mid);
+      border-bottom: 2px solid var(--xp-border-mid);
+      color: #111;
+    }
+    .xp-button:active, .menu-btn:active, .tab-btn:active, .hour-cell:active, .project-tile:active, .palette-btn:active { transform: translate(1px,1px); }
+    .xp-button { padding: 8px 10px; text-align: center; }
+    .xp-button.full { width: 100%; }
+    .xp-button.primary { background: linear-gradient(180deg, #fffbce, #ffcc35); font-weight: 700; }
+    .xp-button.danger { color: #9a1919; }
+
+    .top-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .top-actions .xp-button { min-width: 92px; padding: 6px 8px; font-size: 13px; }
+    .top-actions-title { color: #173c95; font-weight: 700; }
+
+    .menu-btn {
+      width: 100%;
+      text-align: left;
+      padding: 12px;
+      display: grid;
+      grid-template-columns: 46px 1fr 16px;
+      gap: 10px;
+      align-items: center;
+      background: linear-gradient(180deg, #fffdf6, #e7e1cf);
+    }
+    .icon-box, .menu-icon, .tile-icon {
+      display: grid; place-items: center;
+      color: white; font-weight: 700;
+      border: 2px solid #333;
+      box-shadow: 3px 3px 0 rgba(0,0,0,.2);
+      overflow: hidden;
+    }
+    .menu-icon { width: 46px; height: 46px; font-size: 20px; }
+    .menu-title { font-weight: 700; color: #173c95; margin-bottom: 2px; }
+    .menu-meta { font-size: 12px; color: #555; }
+
+    .section-caption {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 6px 0 8px;
+      gap: 8px;
+    }
+    .section-caption strong { color: #173c95; }
+
+    .tab-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .tab-btn { padding: 6px 10px; min-width: 62px; text-align: center; font-size: 12px; }
+    .tab-btn.active {
+      background: linear-gradient(180deg, #e2ecff, #b7cdfb);
+      border-top-color: #7b93c3;
+      border-left-color: #7b93c3;
+      border-right-color: #fff;
+      border-bottom-color: #fff;
+      font-weight: 700;
+    }
+
+    .month-caption {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin: 10px 0;
+      flex-wrap: wrap;
+    }
+
+    .calendar {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+    }
+    .weekday {
+      padding: 5px 2px;
+      background: #dbe7ff;
+      border: 1px solid #94a8d2;
+      text-align: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: #173c95;
+    }
+    .day {
+      min-height: 62px;
+      background: #fffef6;
+      border-top: 2px solid #fff;
+      border-left: 2px solid #fff;
+      border-right: 2px solid #aaa593;
+      border-bottom: 2px solid #aaa593;
+      padding: 5px;
+      position: relative;
+      cursor: pointer;
+    }
+    .day.muted { opacity: .32; background: #e8e3cf; cursor: default; }
+    .day.today { outline: 3px solid #ffb900; outline-offset: -4px; }
+    .day-num {
+      font-weight: 700;
+      color: #333;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      gap: 2px;
+    }
+    .hours-total {
+      font-size: 11px;
+      color: #1f3f9d;
+      background: #e9f0ff;
+      border: 1px solid #9cadcf;
+      padding: 1px 3px;
+      white-space: nowrap;
+    }
+    .day-bar {
+      height: 10px;
+      background: #e3dfce;
+      border-top: 1px solid #7e7a70;
+      border-left: 1px solid #7e7a70;
+      border-right: 1px solid #fff;
+      border-bottom: 1px solid #fff;
+      margin-top: 10px;
+      overflow: hidden;
+    }
+    .day-bar span { display: block; height: 100%; }
+    .day-note { margin-top: 7px; font-size: 10px; color: #555; text-align: right; }
+
+    .form-row { display: flex; gap: 10px; align-items: end; flex-wrap: wrap; margin-bottom: 12px; }
+    .xp-field { min-width: 0; }
+    .xp-field.grow { flex: 1 1 180px; }
+    .xp-field label { display: block; font-size: 12px; margin-bottom: 4px; color: #333; }
+    .xp-select, .xp-input {
+      height: 32px;
+      min-width: 74px;
+      padding: 4px 8px;
+      font: inherit;
+      background: white;
+      border-top: 2px solid #777;
+      border-left: 2px solid #777;
+      border-right: 2px solid #fff;
+      border-bottom: 2px solid #fff;
+    }
+    .xp-input.full { width: 100%; }
+    .color-input {
+      width: 48px; height: 32px; padding: 2px;
+      border-top: 2px solid #777;
+      border-left: 2px solid #777;
+      border-right: 2px solid #fff;
+      border-bottom: 2px solid #fff;
+      background: white;
+    }
+
+    .project-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+    .project-tile {
+      min-height: 112px;
+      text-align: center;
+      padding: 12px 8px;
+      position: relative;
+      background: #fffef6;
+    }
+    .tile-icon { width: 42px; height: 42px; margin: 0 auto 8px; font-size: 18px; }
+    .tile-title { font-weight: 700; word-break: break-word; }
+    .tile-meta { font-size: 12px; color: #555; margin-top: 5px; }
+    .done-badge {
+      position: absolute;
+      right: 6px; top: 6px;
+      font-size: 11px;
+      background: #e7ffe7;
+      border: 1px solid #4b9a4b;
+      color: #226b22;
+      padding: 1px 4px;
+    }
+
+    .notice {
+      background: var(--xp-warning);
+      border: 1px solid #bc9b37;
+      padding: 8px 10px;
+      font-size: 12px;
+      margin: 8px 0 14px;
+      line-height: 1.4;
+    }
+    .error-box { background: #ffe2e2; border-color: #bc5a5a; color: #7a1515; }
+
+    .hour-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      background: white;
+      border-top: 2px solid #79766d;
+      border-left: 2px solid #79766d;
+      border-right: 2px solid #fff;
+      border-bottom: 2px solid #fff;
+      font-size: 12px;
+    }
+    .hour-table th {
+      background: linear-gradient(180deg, #fefefe, #d7d2bf);
+      border-right: 1px solid #999;
+      border-bottom: 1px solid #999;
+      padding: 6px 8px;
+      text-align: left;
+      color: #173c95;
+    }
+    .hour-table td { border-right: 1px solid #cbc6b6; border-bottom: 1px solid #cbc6b6; padding: 4px 6px; }
+    .hour-cell {
+      width: 100%; height: 29px;
+      background: #f6f3e7;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px;
+    }
+    .hour-cell.selected {
+      color: white;
+      background: linear-gradient(180deg, #5c91ff, #245edb);
+      border-top-color: #1d4290;
+      border-left-color: #1d4290;
+      border-right-color: #bcd0ff;
+      border-bottom-color: #bcd0ff;
+      font-weight: 700;
+    }
+    .selected-list { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+    .selected-list span { background: #e6efff; border: 1px solid #8ea4d3; padding: 2px 5px; font-size: 12px; }
+
+    .settings-card { margin-top: 10px; }
+    .project-edit-list { display: grid; gap: 10px; margin-top: 10px; }
+    .project-edit-row {
+      background: #fffef6;
+      border-top: 2px solid #fff;
+      border-left: 2px solid #fff;
+      border-right: 2px solid #8f8a7b;
+      border-bottom: 2px solid #8f8a7b;
+      padding: 10px;
+      display: grid;
+      gap: 8px;
+    }
+    .project-edit-head { display: grid; grid-template-columns: 46px 1fr; gap: 10px; align-items: center; }
+    .icon-preview { width: 42px; height: 42px; font-size: 18px; }
+    .row-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .palette { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+    .palette-btn { width: 28px; height: 28px; padding: 0; }
+    .palette-btn.active { outline: 3px solid #ffb900; outline-offset: 1px; }
+
+    .auth-card { margin-top: 10px; }
+    .auth-title { font-size: 22px; font-weight: 700; color: #173c95; margin-bottom: 4px; }
+    .auth-actions { display: grid; grid-template-columns: 1fr; gap: 8px; margin-top: 10px; }
+
+    .footerbar {
+      padding: 6px 10px;
+      background: #edead9;
+      border-top: 1px solid #b8b4a3;
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 11px;
+      color: #333;
+      flex-wrap: wrap;
+    }
+
+    .hidden { display: none !important; }
+    .loading { opacity: .65; pointer-events: none; }
+
+    @media (max-width: 380px) {
+      .summary-grid { grid-template-columns: 1fr; }
+      .project-grid { grid-template-columns: 1fr; }
+      .hero-strip { grid-template-columns: 1fr; }
+      .day { min-height: 58px; padding: 4px 3px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="desktop">
+    <div class="phone-shell">
+      <div class="window" role="application" aria-label="Time Recorder XP">
+        <div class="titlebar">
+          <div class="title-left"><span class="app-icon"></span><span class="title-text">Time Recorder.exe</span></div>
+          <div class="controls"><span class="control-btn">_</span><span class="control-btn">□</span><span class="control-btn">×</span></div>
+        </div>
+        <div class="menubar"><span>文件</span><span>记录</span><span>项目</span><span>帮助</span></div>
+
+        <main class="content" id="appRoot">
+          <section class="page" id="page-loading">
+            <div class="panel"><div class="date-large">正在启动...</div><div class="subtle">正在读取项目和时间记录。Build: v20260706_final_login_first</div></div>
+          </section>
+
+          <section class="page active" id="page-auth">
+            <div class="panel auth-card">
+              <div class="auth-title">登录 Time Recorder</div>
+              
+              <div class="form-row" style="margin-top:14px">
+                <div class="xp-field grow"><label>邮箱</label><input id="authEmail" class="xp-input full" type="email" placeholder="you@example.com" /></div>
+                <div class="xp-field grow"><label>密码</label><input id="authPassword" class="xp-input full" type="password" placeholder="至少 6 位" /></div>
+              </div>
+              <div class="auth-actions">
+                <button class="xp-button primary" id="loginBtn">登录</button>
+              </div>
+              <div id="authMsg" class="notice hidden"></div>
+              
+            </div>
+          </section>
+
+          <section class="page" id="page-home">
+            <div class="hero-strip">
+              <div class="panel">
+                <div class="date-large" id="homeDateTitle">今天</div>
+                <div class="subtle" id="homeStatusText">今天已经记录 0 小时。</div>
+              </div>
+              <div class="panel">
+                <div class="subtle">当前时间</div>
+                <div class="clock" id="clock">--:--</div>
+              </div>
+            </div>
+
+            <div class="summary-grid" id="summaryGrid"></div>
+
+            <div class="menu-grid">
+              <button class="menu-btn" data-page="record">
+                <div class="menu-icon" style="background:#294eb4">＋</div>
+                <div><div class="menu-title">记录今天</div><div class="menu-meta">进入日期与项目页面，默认指向今天</div></div>
+                <div>›</div>
+              </button>
+              <button class="menu-btn" data-page="month">
+                <div class="menu-icon" style="background:#37774d">月</div>
+                <div><div class="menu-title">月历统计</div><div class="menu-meta">按项目切换查看每日小时数</div></div>
+                <div>›</div>
+              </button>
+              <button class="menu-btn" data-page="settings">
+                <div class="menu-icon" style="background:#777">⚙</div>
+                <div><div class="menu-title">设置</div><div class="menu-meta">新增项目、改名、颜色和图标</div></div>
+                <div>›</div>
+              </button>
+            </div>
+          </section>
+
+          <section class="page" id="page-month">
+            <div class="top-actions"><button class="xp-button" data-page="home">← 首页</button><span class="top-actions-title">月历统计</span></div>
+            <div class="panel">
+              <div class="date-large" id="monthTitle">月历统计</div>
+              <div class="subtle">每个日期只显示“日期 + 小时数”。右上角可以切换全部或单个项目。</div>
+            </div>
+            <div class="month-caption">
+              <strong id="monthCaptionText">本月</strong>
+              <div class="tab-row" id="projectTabs"></div>
+            </div>
+            <div class="calendar" id="calendar"></div>
+          </section>
+
+          <section class="page" id="page-record">
+            <div class="top-actions"><button class="xp-button" data-page="home">← 首页</button><span class="top-actions-title">记录今天</span></div>
+            <div class="panel">
+              <div class="date-large">选择日期与项目</div>
+              <div class="subtle">默认进入今天，也可以补记其他日期。</div>
+            </div>
+            <div class="form-row" style="margin-top:14px">
+              <div class="xp-field"><label>年份</label><select id="yearSelect" class="xp-select"></select></div>
+              <div class="xp-field"><label>月份</label><select id="monthSelect" class="xp-select"></select></div>
+              <div class="xp-field"><label>日期</label><select id="daySelect" class="xp-select"></select></div>
+              <button class="xp-button" data-page="settings">项目设置</button>
+            </div>
+            <div class="notice" id="chosenDateNotice">选定日期。</div>
+            <div class="project-grid" id="projectGrid"></div>
+          </section>
+
+          <section class="page" id="page-hours">
+            <div class="top-actions"><button class="xp-button" data-page="home">← 首页</button><span class="top-actions-title">小时记录</span></div>
+            <div class="panel">
+              <div class="date-large" id="hourPageTitle">项目 · 日期</div>
+              <div class="subtle">再次点击已经点亮的小时，会反向取消。保存时覆盖当天该项目的记录。</div>
+            </div>
+            <div class="notice" id="hourNotice">读取旧记录。</div>
+            <table class="hour-table" aria-label="小时记录表">
+              <thead><tr><th style="width:140px">小时</th><th>点击记录</th></tr></thead>
+              <tbody id="hourRows"></tbody>
+            </table>
+            <div class="panel" style="margin-top:10px">
+              <strong>已选择小时</strong>
+              <div class="selected-list" id="selectedList"></div>
+            </div>
+            <button class="xp-button primary full" style="margin-top:10px" id="saveHoursBtn">记录完成</button>
+            <div class="row-actions" style="margin-top:8px">
+              <button class="xp-button" data-page="record">返回项目</button>
+              <button class="xp-button" data-page="home">返回首页</button>
+            </div>
+          </section>
+
+          <section class="page" id="page-settings">
+            <div class="top-actions"><button class="xp-button" data-page="home">← 首页</button><span class="top-actions-title">设置</span></div>
+            <div class="panel">
+              <div class="date-large">项目设置</div>
+              <div class="subtle">新增和修改项目时，可以自定义项目名、图标字符和颜色。不上传图片，只存文字与颜色。</div>
+            </div>
+            <div class="panel settings-card">
+              <strong>新增项目</strong>
+              <div class="form-row" style="margin-top:10px">
+                <div class="xp-field grow"><label>项目名</label><input id="newProjectName" class="xp-input full" placeholder="例如：阅读" /></div>
+                <div class="xp-field"><label>图标字</label><input id="newProjectIcon" class="xp-input" style="width:74px" maxlength="2" placeholder="阅" /></div>
+                <div class="xp-field"><label>颜色</label><input id="newProjectColor" class="color-input" type="color" value="#37774d" /></div>
+              </div>
+              <div class="palette" id="newPalette"></div>
+              <button class="xp-button primary full" style="margin-top:10px" id="addProjectBtn">新增项目</button>
+            </div>
+            <div class="section-caption"><strong>已有项目</strong><span class="subtle">历史记录不会因改名或换颜色丢失</span></div>
+            <div class="project-edit-list" id="projectEditList"></div>
+            <button class="xp-button full" style="margin-top:10px" id="logoutBtn">退出登录</button>
+          </section>
+        </main>
+
+        <div class="footerbar"><span id="footerMode">Ready</span><span>XP Pixel Mode</span></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  // 1. 部署前把下面两项替换成你的 Supabase Project URL 和 anon public key / publishable key。
+  // 2. 如果保持占位符不变，网页会进入“本地预览模式”，数据只存在当前浏览器 localStorage。
+  const SUPABASE_URL = "https://gdcldcvdflfnpncdolkx.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkY2xkY3ZkZmxmbnBuY2RvbGt4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMyNTQyNTQsImV4cCI6MjA5ODgzMDI1NH0.bNxXU4jQZs2IrR_1b_4iqBPda9AtNjUW9OuAbeMpvWg";
+
+  const PALETTE = ['#294eb4', '#8d49b5', '#37774d', '#d47b20', '#bd3f34', '#297d8f', '#777777', '#b58b18'];
+  const DEFAULT_PROJECTS = [
+    { name: '论文', icon: '文', color: '#294eb4', sort_order: 1 },
+    { name: '钢琴', icon: '♫', color: '#8d49b5', sort_order: 2 }
+  ];
+
+  const state = {
+    remoteMode: Boolean(SUPABASE_URL.startsWith('https://') && !SUPABASE_URL.includes('YOUR_PROJECT_ID') && !SUPABASE_ANON_KEY.includes('YOUR_SUPABASE')),
+    sb: null,
+    user: null,
+    projects: [],
+    entries: [],
+    selectedDate: todayISO(),
+    viewYear: new Date().getFullYear(),
+    viewMonth: new Date().getMonth() + 1,
+    selectedProjectId: null,
+    selectedHours: new Set(),
+    monthFilter: 'all'
+  };
+
+  const $ = id => document.getElementById(id);
+  const pad = n => String(n).padStart(2, '0');
+  const ymd = (y,m,d) => `${y}-${pad(m)}-${pad(d)}`;
+
+  function todayISO() {
+    const now = new Date();
+    return ymd(now.getFullYear(), now.getMonth() + 1, now.getDate());
+  }
+  function parseISODate(s) {
+    const [y,m,d] = s.split('-').map(Number);
+    return new Date(y, m - 1, d);
+  }
+  function formatChineseDate(s) {
+    const date = parseISODate(s);
+    const weekdays = ['星期日','星期一','星期二','星期三','星期四','星期五','星期六'];
+    return `${date.getFullYear()}年${date.getMonth()+1}月${date.getDate()}日 · ${weekdays[date.getDay()]}`;
+  }
+  function dateParts(s) {
+    const [y,m,d] = s.split('-').map(Number);
+    return { y, m, d };
+  }
+  function monthRange(year, month) {
+    const start = ymd(year, month, 1);
+    const next = month === 12 ? ymd(year + 1, 1, 1) : ymd(year, month + 1, 1);
+    return { start, next };
+  }
+  function daysInMonth(year, month) { return new Date(year, month, 0).getDate(); }
+  function mondayFirstOffset(year, month) {
+    const day = new Date(year, month - 1, 1).getDay();
+    return (day + 6) % 7;
+  }
+  function compactDate(s) { const { y, m, d } = dateParts(s); return `${y}-${pad(m)}-${pad(d)}`; }
+  function normalizeIcon(value, name) {
+    const v = (value || '').trim();
+    if (v) return Array.from(v).slice(0, 2).join('');
+    const n = (name || '').trim();
+    return n ? Array.from(n)[0].toUpperCase() : '★';
+  }
+  function safeHours(hours) {
+    return [...new Set((hours || []).map(Number).filter(h => Number.isInteger(h) && h >= 0 && h <= 23))].sort((a,b) => a-b);
+  }
+  function entryKey(projectId, date) { return `${projectId}|${date}`; }
+  function getEntry(projectId, date) { return state.entries.find(e => e.project_id === projectId && e.entry_date === date); }
+  function activeProjects() { return state.projects.filter(p => !p.archived).sort((a,b)=>(a.sort_order||0)-(b.sort_order||0)); }
+  function allProjectsSorted() { return [...state.projects].sort((a,b)=>(a.sort_order||0)-(b.sort_order||0)); }
+
+  function showPage(name) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    $(`page-${name}`).classList.add('active');
+    if (name === 'home') renderHome();
+    if (name === 'month') renderMonth();
+    if (name === 'record') renderRecord();
+    if (name === 'hours') renderHoursPage();
+    if (name === 'settings') renderSettings();
+  }
+
+  function setLoading(isLoading) {
+    $('appRoot').classList.toggle('loading', isLoading);
+  }
+  function showMessage(el, text, isError=false) {
+    el.textContent = text;
+    el.classList.remove('hidden');
+    el.classList.toggle('error-box', isError);
+  }
+  function hideMessage(el) { el.classList.add('hidden'); el.textContent = ''; }
+
+  function updateClock() {
+    const now = new Date();
+    const c = $('clock');
+    if (c) c.textContent = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  }
+
+  function withTimeout(promise, ms, message) {
+    let timer;
+    const timeout = new Promise((_, reject) => {
+      timer = setTimeout(() => reject(new Error(message)), ms);
+    });
+    return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+  }
+
+  function loadScript(src) {
+    return new Promise((resolve, reject) => {
+      const existing = document.querySelector(`script[src="${src}"]`);
+      if (existing) return resolve();
+      const script = document.createElement('script');
+      script.src = src;
+      script.async = true;
+      script.onload = resolve;
+      script.onerror = () => reject(new Error(`无法加载 ${src}`));
+      document.head.appendChild(script);
+    });
+  }
+
+  async function ensureSupabaseSDK() {
+    if (window.supabase?.createClient) return;
+    const cdns = [
+      'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',
+      'https://unpkg.com/@supabase/supabase-js@2'
+    ];
+    for (const src of cdns) {
+      try {
+        await withTimeout(loadScript(src), 8000, `加载 Supabase SDK 超时：${src}`);
+        if (window.supabase?.createClient) return;
+      } catch (err) {
+        console.warn(err);
+      }
+    }
+    throw new Error('Supabase SDK 加载失败。可能是 CDN 被浏览器、网络或插件拦截。');
+  }
+
+  async function init() {
+    updateClock();
+    setInterval(updateClock, 15000);
+    document.querySelectorAll('[data-page]').forEach(el => el.addEventListener('click', () => showPage(el.dataset.page)));
+    bindAuth();
+    bindRecordSelectors();
+    bindSettings();
+    bindHourSave();
+
+    if (state.remoteMode) {
+      $('footerMode').textContent = 'Supabase 连接中';
+      showPage('auth');
+      try {
+        await ensureSupabaseSDK();
+        state.sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        $('footerMode').textContent = 'Supabase 已连接';
+        const { data } = await withTimeout(state.sb.auth.getSession(), 8000, '读取登录状态超时，请刷新页面重试。');
+        state.user = data.session?.user || null;
+        state.sb.auth.onAuthStateChange(async (_event, session) => {
+          state.user = session?.user || null;
+          if (state.user) await loadAndRender(); else showPage('auth');
+        });
+        if (!state.user) showPage('auth'); else await loadAndRender();
+      } catch (err) {
+        console.error(err);
+        setLoading(false);
+        showPage('auth');
+        showMessage($('authMsg'), '启动失败：' + (err.message || err), true);
+      }
+    } else {
+      $('footerMode').textContent = '本地预览模式 · 未连接 Supabase';
+      loadLocal();
+      ensureLocalDefaults();
+      await loadAndRender(false);
+    }
+  }
+
+  async function loadAndRender(remote = state.remoteMode) {
+    setLoading(true);
+    try {
+      if (remote) {
+        await loadRemoteData();
+        await ensureRemoteDefaults();
+        await loadRemoteData();
+      }
+      populateDateSelectors();
+      showPage('home');
+    } catch (err) {
+      console.error(err);
+      showPage('auth');
+      showMessage($('authMsg'), err.message || '读取失败，请检查 Supabase 设置。', true);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function bindAuth() {
+    $('loginBtn').addEventListener('click', async () => {
+      hideMessage($('authMsg'));
+      if (!state.remoteMode) return showMessage($('authMsg'), '当前是本地预览模式，不需要登录。请填写 Supabase URL 和 anon key 后重新上传。', true);
+      if (!state.sb) return showMessage($('authMsg'), 'Supabase 还没有连接成功，请刷新页面或检查网络/CDN。', true);
+      const email = $('authEmail').value.trim();
+      const password = $('authPassword').value;
+      if (!email || !password) return showMessage($('authMsg'), '请填写邮箱和密码。', true);
+      setLoading(true);
+      try {
+        const { error } = await withTimeout(state.sb.auth.signInWithPassword({ email, password }), 10000, '登录请求超时，请刷新后重试。');
+        if (error) showMessage($('authMsg'), error.message, true);
+      } catch (err) {
+        showMessage($('authMsg'), err.message || '登录失败。', true);
+      } finally { setLoading(false); }
+    });
+    $('logoutBtn').addEventListener('click', async () => {
+      if (state.remoteMode && state.sb) await state.sb.auth.signOut();
+      else { alert('本地预览模式没有登录状态。'); showPage('home'); }
+    });
+  }
+
+  async function loadRemoteData() {
+    const { start, next } = monthRange(state.viewYear, state.viewMonth);
+    const { data: projects, error: pErr } = await state.sb.from('time_projects').select('*').order('sort_order', { ascending: true });
+    if (pErr) throw pErr;
+    state.projects = projects || [];
+    const { data: entries, error: eErr } = await state.sb.from('time_entries').select('*').gte('entry_date', start).lt('entry_date', next);
+    if (eErr) throw eErr;
+    state.entries = (entries || []).map(e => ({ ...e, hours: safeHours(e.hours) }));
+  }
+  async function ensureRemoteDefaults() {
+    if (state.projects.length > 0) return;
+    const rows = DEFAULT_PROJECTS.map(p => ({ ...p, user_id: state.user.id }));
+    const { error } = await state.sb.from('time_projects').insert(rows);
+    if (error) throw error;
+  }
+
+  function loadLocal() {
+    state.projects = JSON.parse(localStorage.getItem('trxp_projects') || '[]');
+    state.entries = JSON.parse(localStorage.getItem('trxp_entries') || '[]').map(e => ({ ...e, hours: safeHours(e.hours) }));
+  }
+  function saveLocal() {
+    localStorage.setItem('trxp_projects', JSON.stringify(state.projects));
+    localStorage.setItem('trxp_entries', JSON.stringify(state.entries));
+  }
+  function ensureLocalDefaults() {
+    if (state.projects.length > 0) return;
+    state.projects = DEFAULT_PROJECTS.map(p => ({ id: crypto.randomUUID(), ...p, archived: false, created_at: new Date().toISOString() }));
+    saveLocal();
+  }
+
+  async function createProject(row) {
+    if (state.remoteMode) {
+      const { error } = await state.sb.from('time_projects').insert([{ ...row, user_id: state.user.id }]);
+      if (error) throw error;
+      await loadRemoteData();
+    } else {
+      state.projects.push({ id: crypto.randomUUID(), ...row, archived: false, created_at: new Date().toISOString() });
+      saveLocal();
+    }
+  }
+  async function updateProject(id, patch) {
+    if (state.remoteMode) {
+      const { error } = await state.sb.from('time_projects').update(patch).eq('id', id);
+      if (error) throw error;
+      await loadRemoteData();
+    } else {
+      state.projects = state.projects.map(p => p.id === id ? { ...p, ...patch } : p);
+      saveLocal();
+    }
+  }
+  async function upsertEntry(projectId, date, hours) {
+    const row = { project_id: projectId, entry_date: date, hours: safeHours(hours) };
+    if (state.remoteMode) {
+      const { error } = await state.sb.from('time_entries').upsert({ ...row, user_id: state.user.id }, { onConflict: 'user_id,project_id,entry_date' });
+      if (error) throw error;
+      await loadRemoteData();
+    } else {
+      const i = state.entries.findIndex(e => e.project_id === projectId && e.entry_date === date);
+      if (i >= 0) state.entries[i] = { ...state.entries[i], ...row, updated_at: new Date().toISOString() };
+      else state.entries.push({ id: crypto.randomUUID(), ...row, created_at: new Date().toISOString(), updated_at: new Date().toISOString() });
+      saveLocal();
+    }
+  }
+
+  function monthEntries() {
+    const { start, next } = monthRange(state.viewYear, state.viewMonth);
+    return state.entries.filter(e => e.entry_date >= start && e.entry_date < next);
+  }
+  function sumHours(entries) { return entries.reduce((acc, e) => acc + safeHours(e.hours).length, 0); }
+  function daysWithEntries(entries) { return new Set(entries.filter(e => safeHours(e.hours).length > 0).map(e => e.entry_date)).size; }
+  function projectStats(projectId) {
+    const rows = monthEntries().filter(e => e.project_id === projectId);
+    return { hours: sumHours(rows), days: daysWithEntries(rows) };
+  }
+  function todayHours() {
+    return state.entries.filter(e => e.entry_date === todayISO()).reduce((acc, e) => acc + safeHours(e.hours).length, 0);
+  }
+
+  function renderHome() {
+    $('homeDateTitle').textContent = formatChineseDate(todayISO());
+    $('homeStatusText').textContent = `今天已经记录 ${todayHours()} 小时，月度进度持续中。`;
+    const entries = monthEntries();
+    const totalHours = sumHours(entries);
+    const totalDays = daysWithEntries(entries);
+    const projects = activeProjects();
+    const cards = [
+      { title: '本月已记录', number: `${totalDays} 天`, sub: `总计 ${totalHours} 小时`, progress: Math.min(totalDays / daysInMonth(state.viewYear, state.viewMonth), 1) }
+    ];
+    projects.slice(0, 2).forEach(p => {
+      const s = projectStats(p.id);
+      cards.push({ title: p.name, number: `${s.hours} h`, sub: `参与 ${s.days} 天`, progress: Math.min(s.hours / 60, 1) });
+    });
+    while (cards.length < 3) cards.push({ title: '待新增', number: '0 h', sub: '设置里新增项目', progress: 0 });
+    $('summaryGrid').innerHTML = cards.map(c => `
+      <div class="stat-card">
+        <h3>${escapeHTML(c.title)}</h3>
+        <div class="stat-number">${escapeHTML(c.number)}</div>
+        <div class="progress-xp"><div style="width:${Math.round(c.progress*100)}%"></div></div>
+        <div class="subtle">${escapeHTML(c.sub)}</div>
+      </div>`).join('');
+  }
+
+  function renderMonth() {
+    $('monthTitle').textContent = `${state.viewYear}年${state.viewMonth}月 · 月历统计`;
+    $('monthCaptionText').textContent = `${state.viewYear}年${state.viewMonth}月`;
+    const tabs = [{ id: 'all', name: '全部', color: '#37774d' }, ...activeProjects().map(p => ({ id: p.id, name: p.name, color: p.color }))];
+    $('projectTabs').innerHTML = tabs.map(t => `<button class="tab-btn ${state.monthFilter===t.id?'active':''}" data-filter="${t.id}">${escapeHTML(t.name)}</button>`).join('');
+    $('projectTabs').querySelectorAll('button').forEach(btn => btn.addEventListener('click', () => {
+      state.monthFilter = btn.dataset.filter;
+      renderMonth();
+    }));
+    buildCalendar();
+  }
+
+  function buildCalendar() {
+    const cal = $('calendar');
+    cal.innerHTML = '';
+    ['周一','周二','周三','周四','周五','周六','周日'].forEach(w => {
+      const h = document.createElement('div'); h.className = 'weekday'; h.textContent = w; cal.appendChild(h);
+    });
+    const offset = mondayFirstOffset(state.viewYear, state.viewMonth);
+    for (let i = 0; i < offset; i++) { const blank = document.createElement('div'); blank.className = 'day muted'; cal.appendChild(blank); }
+    const totalDays = daysInMonth(state.viewYear, state.viewMonth);
+    for (let d = 1; d <= totalDays; d++) {
+      const date = ymd(state.viewYear, state.viewMonth, d);
+      let rows = state.entries.filter(e => e.entry_date === date);
+      if (state.monthFilter !== 'all') rows = rows.filter(e => e.project_id === state.monthFilter);
+      const hours = sumHours(rows);
+      const color = state.monthFilter === 'all' ? '#37774d' : (state.projects.find(p => p.id === state.monthFilter)?.color || '#294eb4');
+      const day = document.createElement('div');
+      day.className = 'day' + (date === todayISO() ? ' today' : '');
+      day.innerHTML = `
+        <div class="day-num"><span>${d}</span><span class="hours-total">${hours}h</span></div>
+        <div class="day-bar"><span style="width:${Math.min(hours / 8 * 100, 100)}%; background: repeating-linear-gradient(90deg, ${color} 0 6px, ${lighten(color)} 6px 12px);"></span></div>
+        <div class="day-note">${hours ? '已记录' : '空白'}</div>`;
+      day.addEventListener('click', () => { state.selectedDate = date; syncViewMonthToSelectedDate(); showPage('record'); });
+      cal.appendChild(day);
+    }
+  }
+
+  function bindRecordSelectors() {
+    $('yearSelect').addEventListener('change', onDateSelectChanged);
+    $('monthSelect').addEventListener('change', onDateSelectChanged);
+    $('daySelect').addEventListener('change', onDateSelectChanged);
+  }
+  function populateDateSelectors() {
+    const now = new Date();
+    const ys = $('yearSelect');
+    ys.innerHTML = '';
+    for (let y = now.getFullYear() - 3; y <= now.getFullYear() + 2; y++) ys.append(new Option(String(y), String(y)));
+    const ms = $('monthSelect');
+    ms.innerHTML = '';
+    for (let m = 1; m <= 12; m++) ms.append(new Option(String(m), String(m)));
+    syncSelectorsFromDate();
+  }
+  function syncSelectorsFromDate() {
+    const { y, m, d } = dateParts(state.selectedDate);
+    $('yearSelect').value = String(y);
+    $('monthSelect').value = String(m);
+    populateDayOptions(y, m, d);
+  }
+  function populateDayOptions(y, m, selectedDay = 1) {
+    const ds = $('daySelect');
+    ds.innerHTML = '';
+    const max = daysInMonth(y, m);
+    for (let d = 1; d <= max; d++) ds.append(new Option(String(d), String(d)));
+    ds.value = String(Math.min(selectedDay, max));
+  }
+  function onDateSelectChanged() {
+    const y = Number($('yearSelect').value);
+    const m = Number($('monthSelect').value);
+    populateDayOptions(y, m, Number($('daySelect').value || 1));
+    const d = Number($('daySelect').value);
+    state.selectedDate = ymd(y, m, d);
+    syncViewMonthToSelectedDate();
+    renderRecord();
+  }
+  function syncViewMonthToSelectedDate() {
+    const { y, m } = dateParts(state.selectedDate);
+    state.viewYear = y; state.viewMonth = m;
+  }
+
+  function renderRecord() {
+    syncSelectorsFromDate();
+    $('chosenDateNotice').textContent = `选定日期：${compactDate(state.selectedDate)}。点击某个项目后，进入该项目当天的 0:00–24:00 小时表格。`;
+    const projects = activeProjects();
+    if (projects.length === 0) {
+      $('projectGrid').innerHTML = '<div class="notice">还没有启用的项目。请先进入设置新增项目。</div>';
+      return;
+    }
+    $('projectGrid').innerHTML = projects.map(p => {
+      const entry = getEntry(p.id, state.selectedDate);
+      const h = safeHours(entry?.hours).length;
+      return `<button class="project-tile" data-project="${p.id}">
+        ${h ? `<span class="done-badge">已填 ${h}h</span>` : ''}
+        <div class="tile-icon" style="background:${p.color}">${escapeHTML(p.icon)}</div>
+        <div class="tile-title">${escapeHTML(p.name)}</div>
+        <div class="tile-meta">${h ? formatHourRanges(safeHours(entry.hours)) : '今天尚未记录'}</div>
+      </button>`;
+    }).join('');
+    $('projectGrid').querySelectorAll('[data-project]').forEach(btn => btn.addEventListener('click', () => {
+      state.selectedProjectId = btn.dataset.project;
+      const entry = getEntry(state.selectedProjectId, state.selectedDate);
+      state.selectedHours = new Set(safeHours(entry?.hours));
+      showPage('hours');
+    }));
+  }
+
+  function renderHoursPage() {
+    const p = state.projects.find(x => x.id === state.selectedProjectId) || activeProjects()[0];
+    if (!p) { showPage('record'); return; }
+    state.selectedProjectId = p.id;
+    const entry = getEntry(p.id, state.selectedDate);
+    if (!state.selectedHours || state.selectedHours.size === 0) state.selectedHours = new Set(safeHours(entry?.hours));
+    $('hourPageTitle').textContent = `${p.name} · ${compactDate(state.selectedDate)}`;
+    $('hourNotice').textContent = entry ? `已经读取旧记录：${formatHourRanges(safeHours(entry.hours)) || '空记录'}。你可以直接修改。` : '这一天还没有记录，可以直接选择小时。';
+    const rows = [];
+    for (let h = 0; h < 24; h++) {
+      const selected = state.selectedHours.has(h);
+      rows.push(`<tr><td>${pad(h)}:00–${pad(h+1)}:00</td><td><button class="hour-cell ${selected?'selected':''}" data-hour="${h}">${selected?'已参与':'未参与'}</button></td></tr>`);
+    }
+    $('hourRows').innerHTML = rows.join('');
+    $('hourRows').querySelectorAll('[data-hour]').forEach(btn => btn.addEventListener('click', () => {
+      const h = Number(btn.dataset.hour);
+      if (state.selectedHours.has(h)) state.selectedHours.delete(h); else state.selectedHours.add(h);
+      renderHoursPage();
+    }));
+    renderSelectedList();
+  }
+  function renderSelectedList() {
+    const hours = safeHours([...state.selectedHours]);
+    $('selectedList').innerHTML = hours.length ? hours.map(h => `<span>${pad(h)}:00</span>`).join('') : '<span>尚未选择</span>';
+  }
+  function bindHourSave() {
+    $('saveHoursBtn').addEventListener('click', async () => {
+      const p = state.projects.find(x => x.id === state.selectedProjectId);
+      if (!p) return;
+      const ok = confirm(`是否更新 ${compactDate(state.selectedDate)} 的“${p.name}”记录？`);
+      if (!ok) return;
+      setLoading(true);
+      try {
+        await upsertEntry(p.id, state.selectedDate, [...state.selectedHours]);
+        alert('记录完成。');
+        showPage('record');
+      } catch (err) {
+        alert('保存失败：' + (err.message || err));
+      } finally { setLoading(false); }
+    });
+  }
+
+  function bindSettings() {
+    renderPalette('newPalette', 'newProjectColor');
+    $('newProjectName').addEventListener('input', () => {
+      if (!$('newProjectIcon').value.trim()) $('newProjectIcon').placeholder = normalizeIcon('', $('newProjectName').value);
+    });
+    $('addProjectBtn').addEventListener('click', async () => {
+      const name = $('newProjectName').value.trim();
+      if (!name) return alert('请填写项目名。');
+      const icon = normalizeIcon($('newProjectIcon').value, name);
+      const color = $('newProjectColor').value || PALETTE[0];
+      const sort_order = state.projects.length ? Math.max(...state.projects.map(p => p.sort_order || 0)) + 1 : 1;
+      setLoading(true);
+      try {
+        await createProject({ name, icon, color, sort_order, archived: false });
+        $('newProjectName').value = ''; $('newProjectIcon').value = '';
+        renderSettings();
+      } catch (err) { alert('新增失败：' + (err.message || err)); }
+      finally { setLoading(false); }
+    });
+  }
+  function renderSettings() {
+    const rows = allProjectsSorted().map(p => `
+      <div class="project-edit-row" data-row="${p.id}">
+        <div class="project-edit-head">
+          <div class="icon-preview icon-box" style="background:${p.color}">${escapeHTML(p.icon)}</div>
+          <div><strong>${escapeHTML(p.name)}</strong><div class="subtle">${p.archived ? '已归档：不出现在日常记录入口' : '启用中'}</div></div>
+        </div>
+        <div class="form-row" style="margin:0">
+          <div class="xp-field grow"><label>项目名</label><input class="xp-input full edit-name" value="${escapeAttr(p.name)}" /></div>
+          <div class="xp-field"><label>图标字</label><input class="xp-input edit-icon" style="width:74px" maxlength="2" value="${escapeAttr(p.icon)}" /></div>
+          <div class="xp-field"><label>颜色</label><input class="color-input edit-color" type="color" value="${escapeAttr(p.color)}" /></div>
+        </div>
+        <div class="palette edit-palette"></div>
+        <div class="row-actions">
+          <button class="xp-button primary save-project">保存修改</button>
+          <button class="xp-button ${p.archived ? '' : 'danger'} archive-project">${p.archived ? '恢复项目' : '归档项目'}</button>
+        </div>
+      </div>`).join('');
+    $('projectEditList').innerHTML = rows || '<div class="notice">还没有项目。</div>';
+    $('projectEditList').querySelectorAll('[data-row]').forEach(row => {
+      const id = row.dataset.row;
+      const colorInput = row.querySelector('.edit-color');
+      renderPaletteInto(row.querySelector('.edit-palette'), colorInput);
+      const updatePreview = () => {
+        const icon = normalizeIcon(row.querySelector('.edit-icon').value, row.querySelector('.edit-name').value);
+        const preview = row.querySelector('.icon-preview');
+        preview.textContent = icon;
+        preview.style.background = colorInput.value;
+      };
+      row.querySelector('.edit-name').addEventListener('input', updatePreview);
+      row.querySelector('.edit-icon').addEventListener('input', updatePreview);
+      colorInput.addEventListener('input', updatePreview);
+      row.querySelector('.save-project').addEventListener('click', async () => {
+        const name = row.querySelector('.edit-name').value.trim();
+        if (!name) return alert('项目名不能为空。');
+        setLoading(true);
+        try {
+          await updateProject(id, { name, icon: normalizeIcon(row.querySelector('.edit-icon').value, name), color: colorInput.value });
+          renderSettings(); renderHome();
+        } catch (err) { alert('修改失败：' + (err.message || err)); }
+        finally { setLoading(false); }
+      });
+      row.querySelector('.archive-project').addEventListener('click', async () => {
+        const p = state.projects.find(x => x.id === id);
+        const ok = confirm(p.archived ? `恢复“${p.name}”？` : `归档“${p.name}”？历史记录会保留。`);
+        if (!ok) return;
+        setLoading(true);
+        try { await updateProject(id, { archived: !p.archived }); renderSettings(); renderHome(); }
+        catch (err) { alert('操作失败：' + (err.message || err)); }
+        finally { setLoading(false); }
+      });
+    });
+  }
+  function renderPalette(containerId, inputId) { renderPaletteInto($(containerId), $(inputId)); }
+  function renderPaletteInto(container, input) {
+    container.innerHTML = PALETTE.map(c => `<button class="palette-btn" data-color="${c}" style="background:${c}" title="${c}"></button>`).join('');
+    container.querySelectorAll('[data-color]').forEach(btn => btn.addEventListener('click', () => {
+      input.value = btn.dataset.color;
+      input.dispatchEvent(new Event('input'));
+    }));
+  }
+
+  function formatHourRanges(hours) {
+    const arr = safeHours(hours);
+    if (!arr.length) return '';
+    const ranges = [];
+    let start = arr[0], prev = arr[0];
+    for (let i = 1; i < arr.length; i++) {
+      if (arr[i] === prev + 1) prev = arr[i];
+      else { ranges.push(`${pad(start)}–${pad(prev+1)}`); start = prev = arr[i]; }
+    }
+    ranges.push(`${pad(start)}–${pad(prev+1)}`);
+    return ranges.join('、');
+  }
+  function escapeHTML(s) {
+    return String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  }
+  function escapeAttr(s) { return escapeHTML(s).replace(/'/g, '&#39;'); }
+  function lighten(hex) {
+    const value = hex.replace('#','');
+    if (value.length !== 6) return '#5a94ff';
+    const n = parseInt(value, 16);
+    const r = Math.min(255, ((n >> 16) & 255) + 55);
+    const g = Math.min(255, ((n >> 8) & 255) + 55);
+    const b = Math.min(255, (n & 255) + 55);
+    return '#' + [r,g,b].map(x => x.toString(16).padStart(2,'0')).join('');
+  }
+
+
+
+  // v20260706_final_login_first：无论当前页面是否是 loading，6 秒后如果仍未连接 Supabase，就在登录页显示诊断信息。
+  setTimeout(() => {
+    try {
+      if (state.remoteMode && !state.sb) {
+        setLoading(false);
+        showPage('auth');
+        showMessage($('authMsg'), 'Supabase 尚未连接成功。常见原因：URL/key 填写格式错误、anon key 换行破坏 JS 字符串、CDN 被拦截，或浏览器 Console 有语法错误。Build: v20260706_final_login_first', true);
+      }
+    } catch (err) {
+      document.body.insertAdjacentHTML('beforeend', '<div style="position:fixed;left:12px;right:12px;bottom:12px;background:#fff8d6;border:2px solid #9a1919;padding:12px;z-index:9999">启动诊断失败：请检查浏览器控制台。Build: v20260706_final_login_first</div>');
+    }
+  }, 6000);
+
+  // 启动兜底：如果某个异步请求永久卡住，5 秒后强制离开启动页，显示登录页或本地首页。
+  setTimeout(() => {
+    try {
+      const loadingPage = $('page-loading');
+      if (loadingPage && loadingPage.classList.contains('active')) {
+        setLoading(false);
+        if (state.remoteMode) {
+          showPage('auth');
+          showMessage($('authMsg'), '启动超过 5 秒，已强制进入登录页。请检查 Supabase URL、anon key、Auth 设置或浏览器控制台。Build: v20260706_final_login_first', true);
+        } else {
+          showPage('home');
+        }
+      }
+    } catch (err) {
+      document.body.insertAdjacentHTML('beforeend', '<div style="position:fixed;left:12px;right:12px;bottom:12px;background:#fff8d6;border:2px solid #9a1919;padding:12px;z-index:9999">启动兜底失败：请检查浏览器控制台。Build: v20260706_final_login_first</div>');
+    }
+  }, 5000);
+
+  init().catch(err => {
+    console.error(err);
+    try {
+      setLoading(false);
+      showPage(state.remoteMode ? 'auth' : 'home');
+      if (state.remoteMode) showMessage($('authMsg'), '启动失败：' + (err.message || err), true);
+    } catch (fallbackErr) {
+      document.body.insertAdjacentHTML('beforeend', '<div style="position:fixed;left:12px;right:12px;bottom:12px;background:#fff8d6;border:2px solid #9a1919;padding:12px;z-index:9999">启动失败，请检查浏览器控制台。</div>');
+    }
+  });
+</script>
+</body>
+</html>
